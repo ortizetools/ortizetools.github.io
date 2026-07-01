@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tabellone Torneo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#13241f;
+    --bg-deep:#0d1a16;
+    --felt:#1c382f;
+    --felt-line:#2c5345;
+    --paper:#f3ead6;
+    --paper-dim:#e6dabd;
+    --ink:#22281f;
+    --ink-soft:#5b6358;
+    --gold:#cf9f3a;
+    --gold-light:#e9c977;
+    --red:#b3432c;
+    --red-light:#cf5d3f;
+    --muted:#7e8d83;
+    --card-w:230px;
+    --col-gap:70px;
+    --title-h:58px;
+    --match-h:64px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 20% 10%, rgba(207,159,58,0.06), transparent 45%),
+      radial-gradient(circle at 80% 90%, rgba(207,159,58,0.05), transparent 50%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .display{font-family:'Anton',sans-serif; letter-spacing:0.5px;}
+  .mono{font-family:'Space Mono',monospace;}
+
+  /* ---------- screens ---------- */
+  .screen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px 20px;}
+  [hidden]{display:none !important;}
+
+  /* ---------- setup screen ---------- */
+  .setup-wrap{max-width:640px; width:100%; text-align:center;}
+  .kicker{
+    color:var(--gold-light); font-family:'Space Mono',monospace; font-size:12px;
+    letter-spacing:4px; text-transform:uppercase; margin-bottom:14px; opacity:.85;
+  }
+  .setup-wrap h1{
+    font-size:clamp(42px,8vw,68px); margin:0 0 8px; line-height:0.95;
+    text-shadow:0 3px 0 rgba(0,0,0,0.35);
+  }
+  .setup-wrap h1 span{color:var(--gold);}
+  .setup-sub{color:var(--paper-dim); opacity:.75; margin:0 0 38px; font-size:15px;}
+  .size-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:10px;
+  }
+  .size-btn{
+    background:var(--felt); border:2px solid var(--felt-line); color:var(--paper);
+    border-radius:6px; padding:22px 8px 16px; cursor:pointer; position:relative;
+    transition:transform .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .size-btn:hover{border-color:var(--gold); background:#234539; transform:translateY(-3px);}
+  .size-btn .num{font-family:'Anton',sans-serif; font-size:34px; display:block; color:var(--gold-light);}
+  .size-btn .lbl{font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); display:block; margin-top:2px;}
+
+  /* ---------- names screen ---------- */
+  .names-wrap{max-width:680px; width:100%; background:var(--paper); color:var(--ink); border-radius:10px;
+    padding:38px 40px 32px; box-shadow:0 20px 60px rgba(0,0,0,0.45); position:relative; overflow:hidden;
+    max-height:88vh; display:flex; flex-direction:column;}
+  .names-wrap::before{content:""; position:absolute; top:0; left:0; right:0; height:8px;
+    background:repeating-linear-gradient(90deg,var(--gold) 0 18px, transparent 18px 30px);}
+  .names-wrap h2{font-family:'Anton',sans-serif; font-size:28px; margin:6px 0 4px; letter-spacing:.5px;}
+  .names-sub{color:var(--ink-soft); font-size:13.5px; margin:0 0 18px; line-height:1.5;}
+  .names-list{overflow-y:auto; padding-right:6px; margin-bottom:18px; flex:1;}
+  .match-group{margin-bottom:16px;}
+  .match-group .mg-label{
+    font-family:'Space Mono',monospace; font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--gold); opacity:.8; margin-bottom:6px;
+  }
+  .name-row{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
+  .name-row input.emoji-mini{
+    width:46px; height:40px; flex:0 0 46px; text-align:center; font-size:18px; padding:0;
+    border-radius:6px; border:1.5px solid #cfc3a0; background:#fffdf7; color:var(--ink);
+  }
+  .name-row input.emoji-mini:focus{outline:none; border-color:var(--gold);}
+  .name-row input.emoji-mini.invalid{border-color:var(--red); background:#fbe9e4;}
+  .name-row input.name-mini{
+    flex:1; height:40px; padding:0 12px; border-radius:6px; border:1.5px solid #cfc3a0;
+    background:#fffdf7; color:var(--ink); font-size:14px; font-family:'Inter',sans-serif;
+  }
+  .name-row input.name-mini:focus{outline:none; border-color:var(--gold);}
+  .name-row .slot-tag{
+    flex:0 0 70px; font-size:11px; color:var(--ink-soft); font-family:'Space Mono',monospace;
+  }
+
+
+  .tut-wrap{max-width:660px; width:100%; background:var(--paper); color:var(--ink); border-radius:10px;
+    padding:38px 40px 32px; box-shadow:0 20px 60px rgba(0,0,0,0.45); position:relative; overflow:hidden;}
+  .tut-wrap::before{content:""; position:absolute; top:0; left:0; right:0; height:8px;
+    background:repeating-linear-gradient(90deg,var(--gold) 0 18px, transparent 18px 30px);}
+  .tut-wrap h2{font-family:'Anton',sans-serif; font-size:30px; margin:6px 0 4px; letter-spacing:.5px;}
+  .tut-wrap .tut-size{color:var(--red); font-family:'Space Mono',monospace; font-size:13px; margin-bottom:22px; display:block;}
+  .tut-list{list-style:none; margin:0 0 26px; padding:0; display:flex; flex-direction:column; gap:14px;}
+  .tut-list li{display:flex; gap:14px; align-items:flex-start; font-size:14.5px; line-height:1.5;}
+  .tut-ico{
+    flex:0 0 30px; height:30px; width:30px; border-radius:50%; background:var(--felt);
+    color:var(--gold-light); display:flex; align-items:center; justify-content:center; font-size:14px;
+  }
+  .tut-list b{color:var(--red);}
+  .tut-actions{display:flex; gap:12px; justify-content:flex-end; margin-top:8px;}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    font-family:'Inter',sans-serif; font-weight:600; font-size:14px; border:none; border-radius:6px;
+    padding:11px 20px; cursor:pointer; transition:filter .15s ease, transform .1s ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--red); color:#fff;}
+  .btn-primary:hover{filter:brightness(1.1);}
+  .btn-ghost{background:transparent; color:var(--ink-soft); border:1.5px solid var(--ink-soft);}
+  .btn-ghost:hover{border-color:var(--ink); color:var(--ink);}
+  .btn-gold{background:var(--gold); color:#2b2106;}
+  .btn-gold:hover{filter:brightness(1.08);}
+
+  /* ---------- bracket screen ---------- */
+  #screen-bracket{display:flex; flex-direction:column; align-items:stretch; padding:0; min-height:100vh;}
+  .toolbar{
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    padding:16px 24px; background:var(--bg-deep); border-bottom:2px solid var(--felt-line); position:sticky; top:0; z-index:50;
+  }
+  .toolbar .ttl{display:flex; flex-direction:column; gap:2px;}
+  .toolbar .ttl h1{font-family:'Anton',sans-serif; font-size:22px; margin:0; letter-spacing:.5px;}
+  .toolbar .ttl span{font-size:11.5px; color:var(--muted); font-family:'Space Mono',monospace;}
+  .toolbar .actions{display:flex; gap:10px; flex-wrap:wrap;}
+  .toolbar .btn{padding:9px 16px; font-size:13px;}
+
+  #bracket-scroll{flex:1; overflow:auto; padding:46px 40px 80px;}
+  #bracket-container{position:relative;}
+
+  .round-title{
+    position:absolute; top:0; text-align:center; cursor:pointer; user-select:none;
+    color:var(--gold-light); font-family:'Anton',sans-serif; font-size:17px; letter-spacing:1px;
+    padding-bottom:8px; border-bottom:2px solid var(--felt-line);
+  }
+  .round-title:hover{color:#fff;}
+  .round-title small{display:block; font-family:'Space Mono',monospace; font-size:9.5px; color:var(--muted); letter-spacing:1px; margin-top:2px;}
+
+  .match{
+    position:absolute; width:var(--card-w); height:var(--match-h);
+    background:var(--felt); border:1.5px solid var(--felt-line); border-radius:5px; overflow:hidden;
+  }
+  .match.inactive{opacity:.55;}
+  .slot{
+    height:50%; display:flex; align-items:center; padding:0 12px; font-size:13.5px;
+    cursor:pointer; transition:background .12s ease; color:var(--paper); gap:6px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; position:relative;
+  }
+  .slot:first-child{border-bottom:1px solid var(--felt-line);}
+  .slot.placeholder{color:var(--muted); font-style:italic;}
+  .slot.disabled{cursor:not-allowed; color:var(--muted);}
+  .slot:not(.disabled):hover{background:rgba(207,159,58,0.15);}
+  .slot.winner{background:linear-gradient(90deg, var(--gold), var(--gold-light)); color:#2b2106; font-weight:700;}
+  .slot.winner::after{content:"✓"; position:absolute; right:10px; font-size:12px;}
+  .slot.loser{opacity:.4; text-decoration:line-through;}
+
+  .champion-card{
+    position:absolute; width:var(--card-w); display:flex; flex-direction:column; align-items:center;
+    justify-content:center; text-align:center; gap:8px; padding:14px;
+  }
+  .champion-card .medal{
+    width:74px; height:74px; border-radius:50%; background:radial-gradient(circle at 35% 30%, var(--gold-light), var(--gold) 70%);
+    display:flex; align-items:center; justify-content:center; font-size:30px; box-shadow:0 0 0 4px rgba(207,159,58,0.25);
+  }
+  .champion-card .cname{font-family:'Anton',sans-serif; font-size:20px; color:#fff; line-height:1.15;}
+  .champion-card .clabel{font-family:'Space Mono',monospace; font-size:10.5px; letter-spacing:2px; color:var(--muted); text-transform:uppercase;}
+
+  svg.connectors{position:absolute; top:0; left:0; pointer-events:none;}
+  svg.connectors path{fill:none; stroke:var(--felt-line); stroke-width:2;}
+  svg.connectors path.resolved{stroke:var(--gold); stroke-width:2.2;}
+
+  /* ---------- modal ---------- */
+  #modal-overlay{
+    position:fixed; inset:0; background:rgba(13,26,22,0.7); backdrop-filter:blur(2px);
+    display:flex; align-items:center; justify-content:center; z-index:200; padding:20px;
+  }
+  .modal-box{
+    background:var(--paper); color:var(--ink); width:100%; max-width:380px; border-radius:10px;
+    padding:24px 24px 20px; box-shadow:0 24px 60px rgba(0,0,0,0.5);
+  }
+  .modal-box h3{margin:0 0 6px; font-family:'Anton',sans-serif; font-size:19px; letter-spacing:.4px;}
+  .modal-box p{margin:0 0 16px; font-size:13.5px; color:var(--ink-soft); line-height:1.45;}
+  .modal-box input[type=text]{
+    width:100%; padding:10px 12px; border-radius:6px; border:1.5px solid #cfc3a0; font-size:14.5px;
+    font-family:'Inter',sans-serif; margin-bottom:10px; background:#fffdf7; color:var(--ink);
+  }
+  .modal-box input[type=text]:focus{outline:none; border-color:var(--gold);}
+  .emoji-field{margin-bottom:16px;}
+  .emoji-field label{display:block; font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;}
+  #modal-emoji-input{
+    width:56px; height:48px; text-align:center; font-size:22px; padding:0; border-radius:6px;
+    border:1.5px solid #cfc3a0; background:#fffdf7; color:var(--ink); margin-bottom:0;
+  }
+  #modal-emoji-input:focus{outline:none; border-color:var(--gold);}
+  #modal-emoji-input.invalid{border-color:var(--red); background:#fbe9e4;}
+  #modal-emoji-error{display:none; font-size:12px; color:var(--red); margin-top:6px;}
+  #modal-emoji-error.show{display:block;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px;}
+
+  /* ---------- context menu ---------- */
+  #context-menu{
+    position:fixed; z-index:210; background:var(--paper); color:var(--ink); border-radius:8px;
+    box-shadow:0 14px 36px rgba(0,0,0,0.45); overflow:hidden; min-width:190px;
+  }
+  #context-menu button{
+    display:block; width:100%; text-align:left; background:none; border:none; padding:11px 16px;
+    font-size:13.5px; font-family:'Inter',sans-serif; cursor:pointer; color:var(--ink);
+  }
+  #context-menu button:hover{background:var(--paper-dim);}
+  #context-menu button.danger{color:var(--red);}
+  #context-menu hr{border:none; border-top:1px solid #e3d6b8; margin:0;}
+
+  /* ---------- toast ---------- */
+  #toast{
+    position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:var(--paper); padding:12px 20px; border-radius:8px; font-size:13.5px;
+    z-index:300; opacity:0; transition:opacity .25s ease, transform .25s ease; pointer-events:none;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4); max-width:80vw; text-align:center;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  ::-webkit-scrollbar{height:12px; width:12px;}
+  ::-webkit-scrollbar-track{background:var(--bg-deep);}
+  ::-webkit-scrollbar-thumb{background:var(--felt-line); border-radius:6px;}
+</style>
+</head>
+<body>
+
+<!-- ===================== SETUP SCREEN ===================== -->
+<section class="screen" id="screen-setup">
+  <div class="setup-wrap">
+    <div class="kicker">Tabellone &mdash; eliminazione diretta</div>
+    <h1>QUANTI<br><span>ELEMENTI?</span></h1>
+    <p class="setup-sub">Scegli quanti elementi (persone, squadre, titoli, idee...) far partecipare al tabellone.</p>
+    <div class="size-grid">
+      <button class="size-btn" data-size="4"><span class="num">4</span><span class="lbl">elementi</span></button>
+      <button class="size-btn" data-size="8"><span class="num">8</span><span class="lbl">elementi</span></button>
+      <button class="size-btn" data-size="16"><span class="num">16</span><span class="lbl">elementi</span></button>
+      <button class="size-btn" data-size="32"><span class="num">32</span><span class="lbl">elementi</span></button>
+      <button class="size-btn" data-size="64"><span class="num">64</span><span class="lbl">elementi</span></button>
+      <button class="size-btn" data-size="128"><span class="num">128</span><span class="lbl">elementi</span></button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== NAMES SCREEN ===================== -->
+<section class="screen" id="screen-names" hidden>
+  <div class="names-wrap">
+    <div class="kicker">Passo 2</div>
+    <h2>Inserisci i nomi</h2>
+    <p class="names-sub" id="names-sub"></p>
+    <div class="names-list" id="names-list"></div>
+    <div class="tut-actions">
+      <button class="btn btn-ghost" id="names-back">Indietro</button>
+      <button class="btn btn-primary" id="names-continue">Continua</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== TUTORIAL SCREEN ===================== -->
+<section class="screen" id="screen-tutorial" hidden>
+  <div class="tut-wrap">
+    <h2>Come funziona</h2>
+    <span class="tut-size" id="tut-size-label"></span>
+    <ul class="tut-list">
+      <li><span class="tut-ico">🖱️</span><div><b>Click sinistro</b> su una scelta &rarr; quella scelta passa alla fase successiva. Ricliccaci sopra per annullare.</div></li>
+      <li><span class="tut-ico">✏️</span><div><b>Click destro</b> su una scelta della <b>Fase 1</b> &rarr; puoi "Rinomina scelta" (inserisci un nome) o "Rimuovi scelta" (torna al nome di default).</div></li>
+      <li><span class="tut-ico">😀</span><div>Nel popup di rinomina trovi un campo apposito per <b>una sola emoji</b> da mettere all'inizio del nome: digitala con la tastiera emoji del tuo dispositivo, se inserisci altro non viene accettata.</div></li>
+      <li><span class="tut-ico">🏷️</span><div><b>Click sinistro</b> sul titolo di una fase &rarr; la rinomini. Di default si chiamano "Fase 1", "Fase 2", ecc.</div></li>
+      <li><span class="tut-ico">🔒</span><div>Solo le scelte della <b>Fase 1</b> possono essere rinominate manualmente: nelle fasi successive il nome arriva automaticamente da chi avanza.</div></li>
+      <li><span class="tut-ico">⏭️</span><div>Le fasi vanno completate <b>in ordine progressivo</b>: non puoi scegliere chi vince in Fase 3 se la Fase 2 non è ancora terminata.</div></li>
+    </ul>
+    <div class="tut-actions">
+      <button class="btn btn-ghost" id="tut-back">Indietro</button>
+      <button class="btn btn-primary" id="tut-start">Inizia il torneo</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== BRACKET SCREEN ===================== -->
+<section id="screen-bracket" hidden>
+  <div class="toolbar">
+    <div class="ttl">
+      <h1>🏆 Tabellone Torneo</h1>
+      <span id="bracket-size-label">&mdash;</span>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" id="btn-new">🔄 Nuovo torneo</button>
+    </div>
+  </div>
+  <div id="bracket-scroll">
+    <div id="bracket-container"></div>
+  </div>
+</section>
+
+<!-- ===================== MODAL ===================== -->
+<div id="modal-overlay" hidden>
+  <div class="modal-box">
+    <h3 id="modal-title">Titolo</h3>
+    <p id="modal-desc"></p>
+    <input type="text" id="modal-input" maxlength="40" />
+    <div class="emoji-field" id="modal-emoji-field">
+      <label for="modal-emoji-input">Emoji (opzionale, una sola)</label>
+      <input type="text" id="modal-emoji-input" maxlength="8" placeholder="😀" />
+      <span id="modal-emoji-error">Inserisci una sola emoji, nessun altro carattere.</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modal-cancel">Annulla</button>
+      <button class="btn btn-primary" id="modal-confirm">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CONTEXT MENU ===================== -->
+<div id="context-menu" hidden></div>
+
+<!-- ===================== TOAST ===================== -->
+<div id="toast"></div>
+
+
+<script>
+(function(){
+  "use strict";
+
+  /* ----------------------------------------------------------------
+     STATE
+  ---------------------------------------------------------------- */
+  var state = { size: null, rounds: [] };
+
+  function buildRounds(size){
+    var numRounds = Math.log2(size);
+    var rounds = [];
+    for (var r = 0; r < numRounds; r++){
+      var matchCount = size / Math.pow(2, r + 1);
+      var matches = [];
+      for (var m = 0; m < matchCount; m++){
+        if (r === 0){
+          matches.push({ slot1Name: null, slot2Name: null, winner: null });
+        } else {
+          matches.push({ winner: null });
+        }
+      }
+      rounds.push({ name: null, matches: matches });
+    }
+    return rounds;
+  }
+
+  function defaultRoundName(r){ return "Fase " + (r + 1); }
+  function defaultSlotLabel(slotIdx){ return "Scelta " + (slotIdx + 1); }
+
+  function getSlotDisplayName(r, m, slotIdx){
+    var round = state.rounds[r];
+    if (r === 0){
+      var key = slotIdx === 0 ? "slot1Name" : "slot2Name";
+      var v = round.matches[m][key];
+      return (v && v.trim()) ? v : defaultSlotLabel(slotIdx);
+    } else {
+      var feederIdx = m * 2 + slotIdx;
+      var feederMatch = state.rounds[r - 1].matches[feederIdx];
+      if (feederMatch.winner === null) return defaultSlotLabel(slotIdx);
+      return getSlotDisplayName(r - 1, feederIdx, feederMatch.winner);
+    }
+  }
+
+  function slotHasCustomName(r, m, slotIdx){
+    if (r !== 0) return false;
+    var key = slotIdx === 0 ? "slot1Name" : "slot2Name";
+    var v = state.rounds[r].matches[m][key];
+    return !!(v && v.trim());
+  }
+
+  function matchActive(r, m){
+    if (r === 0) return true;
+    var f1 = state.rounds[r - 1].matches[m * 2];
+    var f2 = state.rounds[r - 1].matches[m * 2 + 1];
+    return f1.winner !== null && f2.winner !== null;
+  }
+
+  /* ----------------------------------------------------------------
+     TOAST
+  ---------------------------------------------------------------- */
+  var toastTimer = null;
+  function showToast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2600);
+  }
+
+  /* ----------------------------------------------------------------
+     MODAL (rename / confirm)
+  ---------------------------------------------------------------- */
+  var modalState = { mode: "input", onConfirm: null };
+
+  var EMOJI_RE = /^(\p{Extended_Pictographic}\uFE0F?(\u200D\p{Extended_Pictographic}\uFE0F?)*|\p{Regional_Indicator}{2})$/u;
+
+  function isSingleEmoji(str){
+    if (!str) return true; // empty is allowed (optional)
+    if (typeof Intl !== "undefined" && Intl.Segmenter){
+      var seg = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+      var parts = Array.from(seg.segment(str), function(s){ return s.segment; });
+      if (parts.length !== 1) return false;
+      return EMOJI_RE.test(parts[0]);
+    }
+    return EMOJI_RE.test(str);
+  }
+
+  function splitEmojiAndName(str){
+    str = (str || "").trim();
+    if (!str) return { emoji: "", name: "" };
+    var first;
+    if (typeof Intl !== "undefined" && Intl.Segmenter){
+      var seg = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+      var parts = Array.from(seg.segment(str), function(s){ return s.segment; });
+      first = parts[0];
+      if (isSingleEmoji(first)){
+        return { emoji: first, name: parts.slice(1).join("").trim() };
+      }
+      return { emoji: "", name: str };
+    }
+    return { emoji: "", name: str };
+  }
+
+  function openInputModal(opts){
+    modalState = { mode: "input", onConfirm: opts.onSave };
+    document.getElementById("modal-title").textContent = opts.title || "";
+    document.getElementById("modal-desc").textContent = opts.desc || "";
+    var input = document.getElementById("modal-input");
+    input.style.display = "block";
+    input.placeholder = opts.placeholder || "";
+    document.getElementById("modal-confirm").textContent = "Salva";
+
+    var emojiField = document.getElementById("modal-emoji-field");
+    var emojiInput = document.getElementById("modal-emoji-input");
+    var emojiError = document.getElementById("modal-emoji-error");
+    emojiInput.classList.remove("invalid");
+    emojiError.classList.remove("show");
+
+    if (opts.showEmoji){
+      emojiField.style.display = "block";
+      var split = splitEmojiAndName(opts.value || "");
+      input.value = split.name;
+      emojiInput.value = split.emoji;
+    } else {
+      emojiField.style.display = "none";
+      input.value = opts.value || "";
+      emojiInput.value = "";
+    }
+
+    document.getElementById("modal-overlay").hidden = false;
+    setTimeout(function(){ input.focus(); input.select(); }, 30);
+  }
+
+  document.getElementById("modal-emoji-input").addEventListener("input", function(){
+    var v = this.value;
+    if (v && !isSingleEmoji(v)){
+      this.classList.add("invalid");
+      document.getElementById("modal-emoji-error").classList.add("show");
+    } else {
+      this.classList.remove("invalid");
+      document.getElementById("modal-emoji-error").classList.remove("show");
+    }
+  });
+
+  function openConfirmModal(opts){
+    modalState = { mode: "confirm", onConfirm: opts.onConfirm };
+    document.getElementById("modal-title").textContent = opts.title || "Conferma";
+    document.getElementById("modal-desc").textContent = opts.desc || "";
+    document.getElementById("modal-input").style.display = "none";
+    document.getElementById("modal-emoji-field").style.display = "none";
+    document.getElementById("modal-confirm").textContent = opts.confirmLabel || "Conferma";
+    document.getElementById("modal-overlay").hidden = false;
+  }
+
+  function closeModal(){
+    document.getElementById("modal-overlay").hidden = true;
+  }
+
+  document.getElementById("modal-cancel").addEventListener("click", closeModal);
+  document.getElementById("modal-overlay").addEventListener("click", function(e){
+    if (e.target === this) closeModal();
+  });
+  document.getElementById("modal-confirm").addEventListener("click", function(){
+    if (modalState.mode === "input"){
+      var emojiField = document.getElementById("modal-emoji-field");
+      var nameVal = document.getElementById("modal-input").value.trim();
+      var val = nameVal;
+      if (emojiField.style.display !== "none"){
+        var emojiVal = document.getElementById("modal-emoji-input").value.trim();
+        if (emojiVal && !isSingleEmoji(emojiVal)){
+          document.getElementById("modal-emoji-input").classList.add("invalid");
+          document.getElementById("modal-emoji-error").classList.add("show");
+          showToast("L'emoji non è valida: usa un solo carattere emoji.");
+          return;
+        }
+        val = emojiVal ? (emojiVal + (nameVal ? " " + nameVal : "")) : nameVal;
+      }
+      if (modalState.onConfirm) modalState.onConfirm(val);
+    } else {
+      if (modalState.onConfirm) modalState.onConfirm();
+    }
+    closeModal();
+  });
+  document.getElementById("modal-input").addEventListener("keydown", function(e){
+    if (e.key === "Enter") document.getElementById("modal-confirm").click();
+    if (e.key === "Escape") closeModal();
+  });
+
+  /* ----------------------------------------------------------------
+     CONTEXT MENU
+  ---------------------------------------------------------------- */
+  function openContextMenu(x, y, items){
+    var menu = document.getElementById("context-menu");
+    menu.innerHTML = "";
+    items.forEach(function(it){
+      if (it.separator){ menu.appendChild(document.createElement("hr")); return; }
+      var b = document.createElement("button");
+      b.textContent = it.label;
+      if (it.danger) b.className = "danger";
+      b.addEventListener("click", function(){ closeContextMenu(); it.onClick(); });
+      menu.appendChild(b);
+    });
+    menu.hidden = false;
+    var rect = menu.getBoundingClientRect();
+    var maxX = window.innerWidth - rect.width - 10;
+    var maxY = window.innerHeight - rect.height - 10;
+    menu.style.left = Math.min(x, maxX) + "px";
+    menu.style.top = Math.min(y, maxY) + "px";
+  }
+  function closeContextMenu(){
+    document.getElementById("context-menu").hidden = true;
+  }
+  document.addEventListener("click", function(e){
+    var menu = document.getElementById("context-menu");
+    if (!menu.hidden && !menu.contains(e.target)) closeContextMenu();
+  });
+  document.addEventListener("contextmenu", function(e){
+    if (!e.target.closest(".slot")) closeContextMenu();
+  });
+
+  /* ----------------------------------------------------------------
+     SCREEN NAVIGATION
+  ---------------------------------------------------------------- */
+  function showScreen(id){
+    ["screen-setup","screen-names","screen-tutorial","screen-bracket"].forEach(function(s){
+      document.getElementById(s).hidden = (s !== id);
+    });
+  }
+
+  document.querySelectorAll(".size-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var size = parseInt(btn.getAttribute("data-size"), 10);
+      state.size = size;
+      state.rounds = buildRounds(size);
+      document.getElementById("names-sub").textContent =
+        "Torneo da " + size + " elementi. Inserisci i nomi (puoi anche lasciarli vuoti e rinominarli dopo con il tasto destro). Per ogni nome puoi aggiungere una sola emoji nel campo a sinistra.";
+      renderNamesScreen();
+      showScreen("screen-names");
+    });
+  });
+
+  function renderNamesScreen(){
+    var list = document.getElementById("names-list");
+    list.innerHTML = "";
+    state.rounds[0].matches.forEach(function(match, m){
+      var group = document.createElement("div");
+      group.className = "match-group";
+      var label = document.createElement("div");
+      label.className = "mg-label";
+      label.textContent = "Incontro " + (m + 1);
+      group.appendChild(label);
+
+      [0,1].forEach(function(slotIdx){
+        var key = slotIdx === 0 ? "slot1Name" : "slot2Name";
+        var split = splitEmojiAndName(match[key] || "");
+        var row = document.createElement("div");
+        row.className = "name-row";
+
+        var tag = document.createElement("span");
+        tag.className = "slot-tag";
+        tag.textContent = defaultSlotLabel(slotIdx);
+        row.appendChild(tag);
+
+        var emojiInput = document.createElement("input");
+        emojiInput.type = "text";
+        emojiInput.className = "emoji-mini";
+        emojiInput.maxLength = 8;
+        emojiInput.placeholder = "😀";
+        emojiInput.value = split.emoji;
+        emojiInput.setAttribute("data-m", m);
+        emojiInput.setAttribute("data-key", key);
+        row.appendChild(emojiInput);
+
+        var nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.className = "name-mini";
+        nameInput.maxLength = 40;
+        nameInput.placeholder = "Nome " + defaultSlotLabel(slotIdx).toLowerCase();
+        nameInput.value = split.name;
+        nameInput.setAttribute("data-m", m);
+        nameInput.setAttribute("data-key", key);
+        row.appendChild(nameInput);
+
+        group.appendChild(row);
+      });
+      list.appendChild(group);
+    });
+  }
+
+  document.getElementById("names-list").addEventListener("input", function(e){
+    if (e.target.classList.contains("emoji-mini")){
+      var v = e.target.value;
+      if (v && !isSingleEmoji(v)) e.target.classList.add("invalid");
+      else e.target.classList.remove("invalid");
+    }
+  });
+
+  document.getElementById("names-back").addEventListener("click", function(){
+    showScreen("screen-setup");
+  });
+
+  document.getElementById("names-continue").addEventListener("click", function(){
+    var invalid = document.querySelector("#names-list .emoji-mini.invalid");
+    if (invalid){
+      showToast("Controlla le emoji inserite: una sola emoji per ogni nome.");
+      invalid.focus();
+      return;
+    }
+    var rows = document.querySelectorAll("#names-list .name-row");
+    rows.forEach(function(row){
+      var emojiInput = row.querySelector(".emoji-mini");
+      var nameInput = row.querySelector(".name-mini");
+      var m = parseInt(emojiInput.getAttribute("data-m"), 10);
+      var key = emojiInput.getAttribute("data-key");
+      var emojiVal = emojiInput.value.trim();
+      var nameVal = nameInput.value.trim();
+      var combined = emojiVal ? (emojiVal + (nameVal ? " " + nameVal : "")) : nameVal;
+      state.rounds[0].matches[m][key] = combined || null;
+    });
+    document.getElementById("tut-size-label").textContent = "Torneo da " + state.size + " elementi";
+    showScreen("screen-tutorial");
+  });
+
+  document.getElementById("tut-back").addEventListener("click", function(){
+    renderNamesScreen();
+    showScreen("screen-names");
+  });
+  document.getElementById("tut-start").addEventListener("click", function(){
+    document.getElementById("bracket-size-label").textContent = state.size + " elementi · " + state.rounds.length + " fasi";
+    showScreen("screen-bracket");
+    renderBracket();
+  });
+
+  document.getElementById("btn-new").addEventListener("click", function(){
+    openConfirmModal({
+      title: "Nuovo torneo",
+      desc: "Il tabellone attuale andrà perso. Vuoi davvero ricominciare?",
+      confirmLabel: "Sì, ricomincia",
+      onConfirm: function(){
+        state = { size: null, rounds: [] };
+        showScreen("screen-setup");
+      }
+    });
+  });
+
+  /* ----------------------------------------------------------------
+     LAYOUT (condiviso tra render DOM ed export canvas)
+  ---------------------------------------------------------------- */
+  var LAYOUT = { cardW: 230, colGap: 70, titleH: 58, matchH: 64, gap0: 26 };
+
+  function computeLayout(){
+    var cardW = LAYOUT.cardW, colGap = LAYOUT.colGap, titleH = LAYOUT.titleH,
+        matchH = LAYOUT.matchH, gap0 = LAYOUT.gap0;
+    var numRounds = state.rounds.length;
+    var unit0 = matchH + gap0;
+    function colX(r){ return r * (cardW + colGap); }
+
+    var positions = [];
+    positions[0] = [];
+    for (var m0 = 0; m0 < state.rounds[0].matches.length; m0++){
+      positions[0][m0] = m0 * unit0 + matchH / 2;
+    }
+    for (var r = 1; r < numRounds; r++){
+      positions[r] = [];
+      for (var m = 0; m < state.rounds[r].matches.length; m++){
+        var a = positions[r-1][2*m], b = positions[r-1][2*m+1];
+        positions[r][m] = (a + b) / 2;
+      }
+    }
+    var totalHeight = state.rounds[0].matches.length * unit0;
+    var totalWidth = colX(numRounds) + cardW + 20;
+
+    return {
+      cardW: cardW, colGap: colGap, titleH: titleH, matchH: matchH,
+      numRounds: numRounds, positions: positions, colX: colX,
+      totalWidth: totalWidth, totalHeight: totalHeight
+    };
+  }
+
+  /* ----------------------------------------------------------------
+     RENDER BRACKET
+  ---------------------------------------------------------------- */
+  function renderBracket(){
+    var container = document.getElementById("bracket-container");
+    container.innerHTML = "";
+    var L = computeLayout();
+    var numRounds = L.numRounds, cardW = L.cardW, colGap = L.colGap,
+        titleH = L.titleH, matchH = L.matchH, positions = L.positions, colX = L.colX;
+
+    container.style.width = L.totalWidth + "px";
+    container.style.height = (titleH + L.totalHeight) + "px";
+
+    // SVG connectors layer
+    var svgNS = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("class","connectors");
+    svg.setAttribute("width", L.totalWidth);
+    svg.setAttribute("height", titleH + L.totalHeight);
+    container.appendChild(svg);
+
+    // round columns + matches
+    state.rounds.forEach(function(round, r){
+      var titleEl = document.createElement("div");
+      titleEl.className = "round-title";
+      titleEl.style.left = colX(r) + "px";
+      titleEl.style.width = cardW + "px";
+      titleEl.innerHTML = (round.name || defaultRoundName(r)) + "<small>click per rinominare</small>";
+      titleEl.addEventListener("click", function(){
+        openInputModal({
+          title: "Rinomina fase",
+          desc: "Imposta un nome personalizzato per questa fase del torneo.",
+          value: round.name || "",
+          placeholder: defaultRoundName(r),
+          showEmoji: false,
+          onSave: function(val){
+            round.name = val || null;
+            renderBracket();
+          }
+        });
+      });
+      container.appendChild(titleEl);
+
+      round.matches.forEach(function(match, m){
+        var card = document.createElement("div");
+        var active = matchActive(r, m);
+        card.className = "match" + (active ? "" : " inactive");
+        card.style.left = colX(r) + "px";
+        card.style.top = (titleH + positions[r][m] - matchH/2) + "px";
+        card.setAttribute("data-r", r);
+        card.setAttribute("data-m", m);
+
+        [0,1].forEach(function(slotIdx){
+          var slot = document.createElement("div");
+          slot.className = "slot";
+          slot.setAttribute("data-slot", slotIdx);
+          var name = getSlotDisplayName(r, m, slotIdx);
+          var isDefault = (r === 0) ? !slotHasCustomName(r, m, slotIdx) : (name === defaultSlotLabel(slotIdx));
+          slot.textContent = name;
+          if (isDefault) slot.classList.add("placeholder");
+          if (!active) slot.classList.add("disabled");
+          if (match.winner === slotIdx) slot.classList.add("winner");
+          else if (match.winner !== null) slot.classList.add("loser");
+
+          slot.addEventListener("click", function(e){
+            e.stopPropagation();
+            if (!matchActive(r, m)){
+              showToast("Completa prima la fase precedente: le scelte sono progressive.");
+              return;
+            }
+            match.winner = (match.winner === slotIdx) ? null : slotIdx;
+            renderBracket();
+          });
+
+          if (r === 0){
+            slot.addEventListener("contextmenu", function(e){
+              e.preventDefault();
+              e.stopPropagation();
+              var key = slotIdx === 0 ? "slot1Name" : "slot2Name";
+              openContextMenu(e.clientX, e.clientY, [
+                { label: "✏️ Rinomina scelta", onClick: function(){
+                    openInputModal({
+                      title: "Rinomina scelta",
+                      desc: "Inserisci il nome. Puoi aggiungere una sola emoji nel campo qui sotto: comparirà all'inizio del nome.",
+                      value: match[key] || "",
+                      placeholder: defaultSlotLabel(slotIdx),
+                      showEmoji: true,
+                      onSave: function(val){
+                        match[key] = val || null;
+                        renderBracket();
+                      }
+                    });
+                  }},
+                { label: "🗑️ Rimuovi scelta", danger: true, onClick: function(){
+                    match[key] = null;
+                    renderBracket();
+                  }}
+              ]);
+            });
+          } else {
+            slot.addEventListener("contextmenu", function(e){
+              e.preventDefault();
+              e.stopPropagation();
+              showToast("Solo le scelte della Fase 1 si possono rinominare manualmente.");
+            });
+          }
+
+          card.appendChild(slot);
+        });
+
+        container.appendChild(card);
+      });
+    });
+
+    // champion column
+    var championX = colX(numRounds);
+    var finalRoundIdx = numRounds - 1;
+    var finalMatch = state.rounds[finalRoundIdx].matches[0];
+    var championY = positions[finalRoundIdx][0];
+    var champCard = document.createElement("div");
+    champCard.className = "champion-card";
+    champCard.style.left = championX + "px";
+    champCard.style.top = (titleH + championY - 60) + "px";
+    var champName = finalMatch.winner !== null ? getSlotDisplayName(finalRoundIdx, 0, finalMatch.winner) : null;
+    champCard.innerHTML =
+      '<div class="medal">🏆</div>' +
+      '<div class="cname">' + (champName || "In attesa") + '</div>' +
+      '<div class="clabel">Campione</div>';
+    container.appendChild(champCard);
+
+    // draw connectors
+    var paths = [];
+    state.rounds.forEach(function(round, r){
+      round.matches.forEach(function(match, m){
+        var sourceX = colX(r) + cardW;
+        var sourceY = titleH + positions[r][m];
+        var targetX, targetY, resolved;
+        if (r < numRounds - 1){
+          var parent = Math.floor(m/2), slotInParent = m % 2;
+          targetX = colX(r+1);
+          targetY = titleH + positions[r+1][parent] + (slotInParent === 0 ? -16 : 16);
+        } else {
+          targetX = championX;
+          targetY = titleH + championY;
+        }
+        resolved = match.winner !== null;
+        var midX = sourceX + colGap/2;
+        var d = "M " + sourceX + " " + sourceY + " H " + midX + " V " + targetY + " H " + targetX;
+        var p = document.createElementNS(svgNS, "path");
+        p.setAttribute("d", d);
+        if (resolved) p.setAttribute("class","resolved");
+        svg.appendChild(p);
+      });
+    });
+  }
+
+})();
+</script>
+</body>
+</html>
